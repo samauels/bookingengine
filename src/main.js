@@ -2,10 +2,16 @@ import Vue from "vue";
 import App from "./App.vue";
 import VCalendar from "v-calendar";
 import cookieconsent from "vue-cookieconsent-component";
+import moment from 'moment'
+
+Vue.prototype.moment = moment
 
 Vue.component("cookie-consent", cookieconsent);
 Vue.use(VCalendar);
-import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
+import {
+  BootstrapVue,
+  BootstrapVueIcons
+} from "bootstrap-vue";
 
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue/dist/bootstrap-vue.css";

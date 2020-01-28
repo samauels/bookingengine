@@ -19,8 +19,8 @@
     </div>-->
     <div style="padding-left:30px">
       <b-list-group>
-        <b-list-group-item>
-          <b>Duration:</b> 7th Jan 2020 to 10th Jan 2020
+        <b-list-group-item v-if="startDate && endDate">
+          <b>Duration:</b> {{ startDate }} to {{ endDate }}
         </b-list-group-item>
         <!-- <b-list-group-item>
           <b>Family Name:</b> Test
@@ -45,6 +45,8 @@ export default {
   name: "SideBar",
   data: function() {
     return {
+      startDate: null,
+      endDate: null,
       minPersons: 0,
       maxPersons: 0,
       totalPersons: 0
@@ -64,7 +66,13 @@ export default {
     this.maxPersons = data.maxPersons;
     this.totalPersons = this.maxPersons - this.minPersons;
   },
-  methods: {},
+  methods: {
+    updateDates() {
+      const { start, end } = JSON.parse(localStorage.getItem("step1"));
+      this.startDate = start;
+      this.endDate = end;
+    }
+  },
   components: {}
 };
 </script>

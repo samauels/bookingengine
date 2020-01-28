@@ -7,9 +7,7 @@
         <select class="ibe_select">
           <option selected disabled>Choose an option</option>
           <option :value="minPersons">{{ minPersons }}</option>
-          <option v-for="item in totalPersons" :value="minPersons + item">{{
-            minPersons + item
-          }}</option>
+          <option v-for="item in totalPersons" :value="minPersons + item">{{ minPersons + item }}</option>
         </select>
       </section>
     </div>
@@ -17,15 +15,24 @@
       <section>
         <div>
           <v-date-picker
+            v-if="showCalendar"
             mode="range"
-            :value="null"
+            v-model="selectedDate"
             color="green"
             is-inline
-            :is-expanded="false"
+            :is-expanded="true"
             :max-date="maxDate"
             :min-date="minDate"
             :attributes="attrs"
+            :columns="layout.columns"
+            :rows="layout.rows"
           />
+          <span v-else>Loading...</span>
+          <!-- {{
+          this.selectedDate
+          ? moment(this.selectedDate.end).format("Do MMM YYYY")
+          : ""
+          }}-->
         </div>
       </section>
       <section></section>
@@ -39,10 +46,81 @@ export default {
   name: "step1",
   data: function() {
     return {
+      selectedDate: null,
+      showCalendar: false,
+      arrivalDays: [],
       minPersons: 0,
       maxPersons: 0,
       totalPersons: 0,
-      attrs: [
+      isFullView: true
+    };
+  },
+  watch: {
+    totalPersons: function(newVal, oldVal) {}
+  },
+  async created() {
+    const { data } = await axios.get(
+      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
+        this.ibe_housingid
+    );
+    const result = await axios.get(
+      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
+        this.ibe_housingid +
+        "/arrivaldays"
+    );
+
+    this.arrivalDays = result.data;
+    result.data.forEach(i => {
+      let date = i.split("-");
+      this.attrs[0].dates.push(new Date(date[0], Number(date[1]), date[2]));
+    });
+    this.$forceUpdate();
+    console.log(result.data);
+    this.minPersons = data.minPersons;
+    this.maxPersons = data.maxPersons;
+    this.totalPersons = this.maxPersons - this.minPersons;
+    this.showCalendar = true;
+    debugger;
+  },
+  props: ["ibe_housingid"],
+  async mounted() {
+    // const { data } = await axios.get(
+    //   "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
+    //     this.ibe_housingid
+    // );
+    // const result = await axios.get(
+    //   "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
+    //     this.ibe_housingid +
+    //     "/arrivaldays"
+    // );
+    // this.arrivalDays = result.data;
+    // result.data.forEach(i => {
+    //   let date = i.split("-");
+    //   this.attrs[0].dates.push(new Date(date[0], Number(date[1]), date[2]));
+    // });
+    // this.attrs[0].dates.push(new Date("2020", "08", "24"));
+    // this.$forceUpdate();
+    // console.log(result.data);
+    // this.minPersons = data.minPersons;
+    // this.maxPersons = data.maxPersons;
+    // this.totalPersons = this.maxPersons - this.minPersons;
+  },
+  computed: {
+    attrs() {
+      return [
+        {
+          // dates: {
+          //   start: minDate, // Jan 1st, 2018
+          //   end: maxDate, // Jan 1st, 2019
+          //   weekdays: [1, 7] // ...on Sundays and Saturdays
+          // },
+          dates: [],
+          highlight: {
+            color: "blue",
+            fillMode: "solid",
+            contentClass: "italic" // Class provided by TailwindCSS
+          }
+        },
         {
           // dates: {
           //   start: minDate, // Jan 1st, 2018
@@ -58,24 +136,8 @@ export default {
             contentClass: "italic" // Class provided by TailwindCSS
           }
         }
-      ]
-    };
-  },
-  watch: {
-    totalPersons: function(newVal, oldVal) {}
-  },
-  props: ["ibe_housingid"],
-  async mounted() {
-    const { data } = await axios.get(
-      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
-        this.ibe_housingid
-    );
-    console.log(data);
-    this.minPersons = data.minPersons;
-    this.maxPersons = data.maxPersons;
-    this.totalPersons = this.maxPersons - this.minPersons;
-  },
-  computed: {
+      ];
+    },
     maxDate() {
       var d = new Date();
       var year = d.getFullYear();
@@ -91,9 +153,35 @@ export default {
       var day = d.getDate();
       var c = new Date(year - 1, month, day);
       return c;
+    },
+    layout() {
+      return this.$screens({
+        // Default layout for mobile
+        default: {
+          columns: 1,
+          rows: 1,
+          isExpanded: true
+        },
+        // Override for large screens
+        lg: {
+          columns: 4,
+          rows: 3,
+          isExpanded: false
+        }
+      });
     }
   },
-  methods: {},
+  methods: {
+    downloadLocalStorage(step, stepObj) {
+      let obj = {
+        ibe_housingid: this.ibe_housingid,
+        start: this.moment(this.selectedDate.start).format("Do MMM YYYY"),
+        end: this.moment(this.selectedDate.end).format("Do MMM YYYY"),
+        ...stepObj
+      };
+      localStorage.setItem("step" + step, JSON.stringify(obj));
+    }
+  },
   components: {}
 };
 </script>

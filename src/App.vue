@@ -31,9 +31,19 @@
       </div>
     </div>
     <div class="ibe_main">
-      <Step1 v-if="currentStep == 1" :ibe_housingid="ibe_housingid"></Step1>
-      <Step2 v-if="currentStep == 2"></Step2>
-      <SideBar></SideBar>
+      <div class="ibe_left_panel">
+        <Step1
+          v-show="currentStep == 1"
+          :ibe_housingid="ibe_housingid"
+          ref="step1"
+        ></Step1>
+        <Step2
+          v-show="currentStep == 2"
+          @proceed="proceedToNextStep"
+          ref="step2"
+        ></Step2>
+      </div>
+      <SideBar ref="sidebar"></SideBar>
     </div>
     <div class="ibe_header">
       <section class="ibe_steps">
@@ -86,7 +96,25 @@ export default {
   methods: {
     nextStep: function() {
       if (this.currentStep + 1 <= this.maxSteps) {
-        this.currentStep++;
+        let stepObj = {
+          ibe_housingid: this.ibe_housingid,
+          cookieConsent: this.cookieConsent,
+          currentStep: this.currentStep
+        };
+        let currentStep = this.currentStep;
+        switch (currentStep) {
+          case 1:
+            this.$refs.step1.downloadLocalStorage(currentStep, stepObj);
+            this.$refs.sidebar.updateDates();
+            break;
+          case 2:
+            this.$refs.step2.validateData();
+            break;
+        }
+        debugger;
+        if (this.currentStep != 2) {
+          this.proceedToNextStep();
+        }
       }
     },
     previousStep: function() {
@@ -96,6 +124,9 @@ export default {
     },
     toggleCookieConsent() {
       this.cookieConsent = true;
+    },
+    proceedToNextStep() {
+      this.currentStep++;
     }
   },
   components: {
@@ -113,6 +144,21 @@ div.ibe_wrapper ::after {
   margin: 0;
   padding: 0;
 } */
+
+@media only screen and (max-width: 500px) {
+  .ibe_main {
+    display: grid;
+    grid-template-rows: 1fr auto;
+  }
+}
+
+@media only screen and (min-width: 501px) {
+  .ibe_main {
+    display: grid;
+    grid-template-columns: 70% 30%;
+  }
+}
+
 div.ibe_wrapper {
   width: 100%;
   box-sizing: border-box;
@@ -138,10 +184,15 @@ section.ibe_steps {
 }
 
 /* Main Content */
-.ibe_main {
+/* .ibe_main {
   display: flex;
   flex-direction: column;
+  grid-template-columns: 1fr 70px;
   padding: 30px;
+} */
+
+.ibe_left_panel {
+  overflow-x: auto;
 }
 
 /* Buttons */
@@ -158,17 +209,13 @@ button.ibe_btn_secondary:active {
   background-color: rgb(212, 212, 212);
 }
 
-.ibe_main {
-  display: grid;
-  grid-template-columns: 70% 30%;
-}
-
 /* Pregress bar */
 .ibe_steps_progress_container {
   width: 70%;
   background-color: rgb(202, 202, 202);
   height: 10px;
   border-radius: 5px;
+  margin: 0px 15px;
 }
 
 .ibe_steps_progress {
