@@ -4,7 +4,7 @@
       <section class="ibe_select_container">
         <span>Enter the number of persons:</span>
 
-        <select class="ibe_select">
+        <select class="ibe_select" v-model="selectedPersons">
           <option selected disabled>Choose an option</option>
           <option :value="minPersons">{{ minPersons }}</option>
           <option v-for="item in totalPersons" :value="minPersons + item">{{ minPersons + item }}</option>
@@ -52,75 +52,62 @@ export default {
       minPersons: 0,
       maxPersons: 0,
       totalPersons: 0,
-      isFullView: true
+      isFullView: true,
+      selectedPersons: null
     };
   },
   watch: {
     totalPersons: function(newVal, oldVal) {}
   },
-  async created() {
-    const { data } = await axios.get(
-      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
-        this.ibe_housingid
-    );
-    const result = await axios.get(
+  created() {
+    let arrivalPromise = axios.get(
       "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
         this.ibe_housingid +
         "/arrivaldays"
     );
+    let generalPromise = axios.get(
+      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
+        this.ibe_housingid
+    );
 
-    this.arrivalDays = result.data;
-    result.data.forEach(i => {
-      let date = i.split("-");
-      this.attrs[0].dates.push(new Date(date[0], Number(date[1]), date[2]));
+    let freePromise = axios.get(
+      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
+        this.ibe_housingid +
+        "/freedays"
+    );
+
+    Promise.all([arrivalPromise, freePromise]).then(values => {
+      console.log(values);
+      const arrivalDays = values[0];
+      this.arrivalDays = arrivalDays.data;
+      arrivalDays.data.forEach(i => {
+        let date = i.split("-");
+        this.attrs[1].dates.push(
+          new Date(date[0], Number(date[1]) - 1, date[2])
+        );
+      });
+
+      const freeDays = values[1];
+      freeDays.data.forEach(i => {
+        let date = i.split("-");
+        this.attrs[2].dates.push(
+          new Date(date[0], Number(date[1]) - 1, date[2])
+        );
+      });
+      this.showCalendar = true;
     });
-    this.$forceUpdate();
-    console.log(result.data);
-    this.minPersons = data.minPersons;
-    this.maxPersons = data.maxPersons;
-    this.totalPersons = this.maxPersons - this.minPersons;
-    this.showCalendar = true;
-    debugger;
+
+    generalPromise.then(({ data }) => {
+      this.minPersons = data.minPersons;
+      this.maxPersons = data.maxPersons;
+      this.totalPersons = this.maxPersons - this.minPersons;
+    });
   },
   props: ["ibe_housingid"],
-  async mounted() {
-    // const { data } = await axios.get(
-    //   "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
-    //     this.ibe_housingid
-    // );
-    // const result = await axios.get(
-    //   "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
-    //     this.ibe_housingid +
-    //     "/arrivaldays"
-    // );
-    // this.arrivalDays = result.data;
-    // result.data.forEach(i => {
-    //   let date = i.split("-");
-    //   this.attrs[0].dates.push(new Date(date[0], Number(date[1]), date[2]));
-    // });
-    // this.attrs[0].dates.push(new Date("2020", "08", "24"));
-    // this.$forceUpdate();
-    // console.log(result.data);
-    // this.minPersons = data.minPersons;
-    // this.maxPersons = data.maxPersons;
-    // this.totalPersons = this.maxPersons - this.minPersons;
-  },
+  async mounted() {},
   computed: {
     attrs() {
       return [
-        {
-          // dates: {
-          //   start: minDate, // Jan 1st, 2018
-          //   end: maxDate, // Jan 1st, 2019
-          //   weekdays: [1, 7] // ...on Sundays and Saturdays
-          // },
-          dates: [],
-          highlight: {
-            color: "blue",
-            fillMode: "solid",
-            contentClass: "italic" // Class provided by TailwindCSS
-          }
-        },
         {
           // dates: {
           //   start: minDate, // Jan 1st, 2018
@@ -135,6 +122,27 @@ export default {
             fillMode: "light",
             contentClass: "italic" // Class provided by TailwindCSS
           }
+        },
+        {
+          // dates: {
+          //   start: minDate, // Jan 1st, 2018
+          //   end: maxDate, // Jan 1st, 2019
+          //   weekdays: [1, 7] // ...on Sundays and Saturdays
+          // },
+          dates: [],
+          highlight: {
+            color: "blue",
+            fillMode: "solid",
+            contentClass: "italic" // Class provided by TailwindCSS
+          }
+        },
+        {
+          dot: {
+            color: "orange",
+            fillMode: "light",
+            contentClass: "italic" // Class provided by TailwindCSS
+          },
+          dates: []
         }
       ];
     },
@@ -180,6 +188,12 @@ export default {
         ...stepObj
       };
       localStorage.setItem("step" + step, JSON.stringify(obj));
+    },
+    getDateAndPersons() {
+      return {
+        date: this.selectedDate,
+        persons: this.selectedPersons
+      };
     }
   },
   components: {}

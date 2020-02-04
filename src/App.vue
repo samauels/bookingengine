@@ -6,42 +6,25 @@
           :style="{ visibility: currentStep > 1 ? 'visible' : 'hidden' }"
           class="ibe_btn_secondary"
           @click="previousStep"
-        >
-          Previous
-        </button>
+        >Previous</button>
         <div class="ibe_steps_progress_container">
-          <span
-            class="ibe_steps_progress"
-            :style="{ width: currentStep * 20 + '%' }"
-          ></span>
+          <span class="ibe_steps_progress" :style="{ width: currentStep * 20 + '%' }"></span>
         </div>
 
         <button
           class="ibe_btn_secondary"
           :style="{ visibility: currentStep < 5 ? 'visible' : 'hidden' }"
           @click="nextStep"
-        >
-          Next
-        </button>
+        >Next</button>
       </section>
       <div>
-        <label class="ibe_steps_title"
-          >Step {{ currentStep }} of {{ maxSteps }}</label
-        >
+        <label class="ibe_steps_title">Step {{ currentStep }} of {{ maxSteps }}</label>
       </div>
     </div>
     <div class="ibe_main">
       <div class="ibe_left_panel">
-        <Step1
-          v-show="currentStep == 1"
-          :ibe_housingid="ibe_housingid"
-          ref="step1"
-        ></Step1>
-        <Step2
-          v-show="currentStep == 2"
-          @proceed="proceedToNextStep"
-          ref="step2"
-        ></Step2>
+        <Step1 v-show="currentStep == 1" :ibe_housingid="ibe_housingid" ref="step1"></Step1>
+        <Step2 v-show="currentStep == 2" @proceed="proceedToNextStep" ref="step2"></Step2>
       </div>
       <SideBar ref="sidebar"></SideBar>
     </div>
@@ -51,16 +34,12 @@
           class="ibe_btn_secondary"
           :style="{ visibility: currentStep > 1 ? 'visible' : 'hidden' }"
           @click="previousStep"
-        >
-          Previous
-        </button>
+        >Previous</button>
         <button
           :style="{ visibility: currentStep < 5 ? 'visible' : 'hidden' }"
           class="ibe_btn_secondary"
           @click="nextStep"
-        >
-          Next
-        </button>
+        >Next</button>
       </section>
     </div>
     <cookie-consent v-if="cookieConsent">
@@ -94,7 +73,7 @@ export default {
   },
   async mounted() {},
   methods: {
-    nextStep: function() {
+    nextStep: async function() {
       if (this.currentStep + 1 <= this.maxSteps) {
         let stepObj = {
           ibe_housingid: this.ibe_housingid,
@@ -102,17 +81,33 @@ export default {
           currentStep: this.currentStep
         };
         let currentStep = this.currentStep;
+        let validationComplete = false;
         switch (currentStep) {
           case 1:
+            let data = this.$refs.step1.getDateAndPersons();
+            if (!data.date.start || !data.date.end) {
+              break;
+            }
+            let price = await axios.get(
+              `https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/
+                ${this.ibe_housingid}/price?persons=${
+                data.persons
+              }&arrival=${this.getDateFormatted(
+                new Date(data.date.start)
+              )}&departure=${this.getDateFormatted(new Date(data.date.end))}`
+            );
+            stepObj["price"] = price.data;
             this.$refs.step1.downloadLocalStorage(currentStep, stepObj);
-            this.$refs.sidebar.updateDates();
+            this.$refs.sidebar.updateDatesAndPrice();
+            validationComplete = true;
             break;
           case 2:
             this.$refs.step2.validateData();
+            validationComplete = true;
             break;
         }
         debugger;
-        if (this.currentStep != 2) {
+        if (this.currentStep != 2 && validationComplete) {
           this.proceedToNextStep();
         }
       }
@@ -127,6 +122,14 @@ export default {
     },
     proceedToNextStep() {
       this.currentStep++;
+    },
+    getDateFormatted(dateObj) {
+      var month = dateObj.getUTCMonth() + 1; //months from 1-12
+      var day = dateObj.getUTCDate();
+      var year = dateObj.getUTCFullYear();
+
+      let newdate = day + "/" + month + "/" + year;
+      return newdate;
     }
   },
   components: {

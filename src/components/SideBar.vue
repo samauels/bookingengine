@@ -20,7 +20,12 @@
     <div style="padding-left:30px">
       <b-list-group>
         <b-list-group-item v-if="startDate && endDate">
-          <b>Duration:</b> {{ startDate }} to {{ endDate }}
+          <b>Duration:</b>
+          {{ startDate }} to {{ endDate }}
+        </b-list-group-item>
+        <b-list-group-item v-if="price">
+          <b>Price:</b>
+          {{ price }}
         </b-list-group-item>
         <!-- <b-list-group-item>
           <b>Family Name:</b> Test
@@ -33,7 +38,7 @@
         </b-list-group-item>
         <b-list-group-item>
           <b>ZIP:</b> Test
-        </b-list-group-item> -->
+        </b-list-group-item>-->
       </b-list-group>
     </div>
   </div>
@@ -49,29 +54,23 @@ export default {
       endDate: null,
       minPersons: 0,
       maxPersons: 0,
-      totalPersons: 0
+      totalPersons: 0,
+      price: null
     };
   },
   watch: {
     totalPersons: function(newVal, oldVal) {}
   },
   props: ["ibe_housingid"],
-  async mounted() {
-    const { data } = await axios.get(
-      "https://virtserver.swaggerhub.com/mnediw/booking/1.0.1/housings/" +
-        this.ibe_housingid
-    );
-    console.log(data);
-    this.minPersons = data.minPersons;
-    this.maxPersons = data.maxPersons;
-    this.totalPersons = this.maxPersons - this.minPersons;
-  },
+  mounted() {},
   methods: {
-    updateDates() {
-      const { start, end } = JSON.parse(localStorage.getItem("step1"));
+    updateDatesAndPrice() {
+      const { start, end, price } = JSON.parse(localStorage.getItem("step1"));
       this.startDate = start;
       this.endDate = end;
-    }
+      this.price = price;
+    },
+    updatePrice() {}
   },
   components: {}
 };
